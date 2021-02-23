@@ -20,8 +20,10 @@ func getFieldInfoNodes*(self: NimNode; fieldIdent: string): (NimNode, NimNode) {
         if ident.repr == fieldIdent:
           return (fieldType, newLit true)
       of `defs` @ nnkIdentDefs:
+        debugEcho defs.lispRepr
         if defs.len > 3:
           for def in defs:
+            debugEcho lispRepr def
             def.matchAst:
             of `ident` @ nnkIdent:
               if ident.repr == fieldIdent:
@@ -29,6 +31,11 @@ func getFieldInfoNodes*(self: NimNode; fieldIdent: string): (NimNode, NimNode) {
             of nnkPostfix("*", `ident` @ nnkIdent):
               if ident.repr == fieldIdent:
                 return (defs[^2], newLit true)
+            #of `fieldType` @ nnkSym:
+            #  if ident.repr == fieldIdent:
+            #    return (defs[^2], newLit true)
+            of nnkSym: continue
+            of nnkEmpty: continue
 
 type ObjectFieldInfo*[T] = object
   `T`*: typedesc[T]
@@ -69,17 +76,22 @@ when isMainModule:
 
 when isMainModule and defined test:
   import std/unittest
+  import typetraits
   #import fusion/astdsl
 
   suite "override object fields from tuple of matching fields":
 
     setup:
       type A = object
-        a, b*: int
+        a, c: int
+        b*: int
 
     test "a":
-      let info = getFieldInfo(A, b)
-      echo info.T.typeof
+      doAssert getFieldInfo(A, a).T is int
+      var info =  getFieldInfo(A, a)
+      doAssert info.T is int
+      info = getFieldInfo(A, b)
+      doAssert info.T is int
       doAssert info.exported == true
 
 #    test "tuple can be a subset of the object's fields":
