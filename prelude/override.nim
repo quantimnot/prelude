@@ -12,17 +12,30 @@ func getFieldInfoNodes*(self: NimNode; fieldIdent: string): (NimNode, NimNode) {
   getImpl(self).matchAst:
   of nnkTypeDef(_, _, nnkObjectTy(_, _, `params` @ nnkRecList)):
     for field in params:
-      var ident = field[0].repr
-      if ident[^1] == '*':
-        if ident[0..^2] == fieldIdent:
-          return (field[1], newLit true)
-      else:
-        if ident == fieldIdent:
-          return (field[1], newLit false)
+      field.matchAst:
+      of nnkIdentDefs(`ident` @ nnkIdent, `fieldType` @ nnkSym, _):
+        if ident.repr == fieldIdent:
+          return (fieldType, newLit false)
+      of nnkIdentDefs(nnkPostfix("*", `ident` @ nnkIdent), `fieldType` @ nnkSym, _):
+        if ident.repr == fieldIdent:
+          return (fieldType, newLit true)
+      of `defs` @ nnkIdentDefs:
+        if defs.len > 3:
+          for def in defs:
+            def.matchAst:
+            of `ident` @ nnkIdent:
+              if ident.repr == fieldIdent:
+                return (defs[^2], newLit false)
+            of nnkPostfix("*", `ident` @ nnkIdent):
+              if ident.repr == fieldIdent:
+                return (defs[^2], newLit true)
 
 type ObjectFieldInfo*[T] = object
   t*: typedesc[T]
   x*: bool
+
+type FieldInitKind* {.pure.} = enum
+  private, constructor, setter, assign, iterate
 
 macro getFieldInfo*[T: object](self: typedesc[T]; field: untyped): ObjectFieldInfo =
   macro inner(s, f): (NimNode, NimNode) =
@@ -30,19 +43,44 @@ macro getFieldInfo*[T: object](self: typedesc[T]; field: untyped): ObjectFieldIn
   let (t, x) = inner[T](self, field)
   quote do: ObjectFieldInfo[`t`](x: `x`)
 
+func getFieldInitKind[T: object](field: string): FieldInitKind =
+  var t = T()
+  when compiles(T(a: default(typeof(t.a)))):
+    return constructor
+  elif compiles(`a=`(t, default(typeof(t.a)))):
+    return setter
+  elif compiles(assign(t.a, default(typeof(t.a)))):
+    return assign
+  elif compiles(for _ in t.a: break):
+    return iterate
+  else: # Private or non-existent field. TODO: check if private
+    discard
+
+
+when isMainModule:
+#dumpLisp:
+  type A = object
+    a: int
+    b*: int
+
+  let info = getFieldInfo(A, b)
+  echo info.t.typeof
+  assert info.x == true
 
 when isMainModule and defined test:
   import std/unittest
-  import fusion/astdsl
+  #import fusion/astdsl
 
   suite "override object fields from tuple of matching fields":
 
     setup:
       type A = object
-        a, b, c*: int
+        a, b*: int
 
     test "a":
-      check getFieldInfo(A, b).x == false
+      let info = getFieldInfo(A, b)
+      echo info.t.typeof
+      doAssert info.x == true
 
 #    test "tuple can be a subset of the object's fields":
 #      var a = A(b: 1, c: 2)
