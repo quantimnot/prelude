@@ -31,8 +31,8 @@ func getFieldInfoNodes*(self: NimNode; fieldIdent: string): (NimNode, NimNode) {
                 return (defs[^2], newLit true)
 
 type ObjectFieldInfo*[T] = object
-  t*: typedesc[T]
-  x*: bool
+  `T`*: typedesc[T]
+  `exported`*: bool
 
 type FieldInitKind* {.pure.} = enum
   private, constructor, setter, assign, iterate
@@ -41,7 +41,7 @@ macro getFieldInfo*[T: object](self: typedesc[T]; field: untyped): ObjectFieldIn
   macro inner(s, f): (NimNode, NimNode) =
     quote do: getFieldInfoNodes(`s`, `f`.strVal)
   let (t, x) = inner[T](self, field)
-  quote do: ObjectFieldInfo[`t`](x: `x`)
+  quote do: ObjectFieldInfo[`t`](exported: `x`)
 
 func getFieldInitKind[T: object](field: string): FieldInitKind =
   var t = T()
@@ -64,8 +64,8 @@ when isMainModule:
     b*: int
 
   let info = getFieldInfo(A, b)
-  echo info.t.typeof
-  assert info.x == true
+  echo info.T.typeof
+  assert info.exported == true
 
 when isMainModule and defined test:
   import std/unittest
@@ -79,8 +79,8 @@ when isMainModule and defined test:
 
     test "a":
       let info = getFieldInfo(A, b)
-      echo info.t.typeof
-      doAssert info.x == true
+      echo info.T.typeof
+      doAssert info.exported == true
 
 #    test "tuple can be a subset of the object's fields":
 #      var a = A(b: 1, c: 2)
