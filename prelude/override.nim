@@ -20,10 +20,8 @@ func getFieldInfoNodes*(self: NimNode; fieldIdent: string): (NimNode, NimNode) {
         if ident.repr == fieldIdent:
           return (fieldType, newLit true)
       of `defs` @ nnkIdentDefs:
-        debugEcho defs.lispRepr
         if defs.len > 3:
           for def in defs:
-            debugEcho lispRepr def
             def.matchAst:
             of `ident` @ nnkIdent:
               if ident.repr == fieldIdent:
@@ -31,15 +29,12 @@ func getFieldInfoNodes*(self: NimNode; fieldIdent: string): (NimNode, NimNode) {
             of nnkPostfix("*", `ident` @ nnkIdent):
               if ident.repr == fieldIdent:
                 return (defs[^2], newLit true)
-            #of `fieldType` @ nnkSym:
-            #  if ident.repr == fieldIdent:
-            #    return (defs[^2], newLit true)
-            of nnkSym: continue
-            of nnkEmpty: continue
+            of nnkSym: discard
+            of nnkEmpty: discard
 
 type ObjectFieldInfo*[T] = object
   `T`*: typedesc[T]
-  `exported`*: bool
+  `exported`*: bool # TODO: rename to `isExported`?
 
 type FieldInitKind* {.pure.} = enum
   private, constructor, setter, assign, iterate
@@ -47,7 +42,7 @@ type FieldInitKind* {.pure.} = enum
 macro getFieldInfo*[T: object](self: typedesc[T]; field: untyped): ObjectFieldInfo =
   macro inner(s, f): (NimNode, NimNode) =
     quote do: getFieldInfoNodes(`s`, `f`.strVal)
-  let (t, x) = inner[T](self, field)
+  let (t, x) = inner(self, field)
   quote do: ObjectFieldInfo[`t`](exported: `x`)
 
 func getFieldInitKind[T: object](field: string): FieldInitKind =
@@ -63,28 +58,72 @@ func getFieldInitKind[T: object](field: string): FieldInitKind =
   else: # Private or non-existent field. TODO: check if private
     discard
 
+#func hasSetterImpl*[T: object; V](
+#    fieldIdent: string,
+#    objType: typedesc[T],
+#    valueType: typedesc[V]): NimNode {.compileTime.} =
+#  var t = T()
+#  macro inner(t, i): bool =
+#    let setterIdent = ident(i.repr & '=')
+#    quote do:
+#      compiles(`setterIdent`(t, default(V)))
+#  newLit inner(t, fieldIdent)
+#
+#func hasSetterImpl*(
+#    fieldIdent: string,
+#    objType, valueType: NimNode): NimNode {.compileTime.} =
+#  expectKind objType, nnkSym
+#  expectKind valueType, nnkSym
+#  macro inner(f, o, v): untyped =
+#    let setter = ident(f.strVal & '=')
+#    quote do:
+#      var t = default(`o`)
+#      compiles(`setter`(t, default(`v`)))
+#  quote do: inner `fieldIdent`, `objType`, `valueType` 
 
-when isMainModule:
-#dumpLisp:
-  type A = object
-    a: int
-    b*: int
+macro hasSetter*[T: object; V](
+    objType: typedesc[T],
+    valueType: typedesc[V],
+    fieldIdent): bool =
+  expectKind objType, nnkSym
+  expectKind valueType, nnkSym
+  macro inner(f, o, v): untyped =
+    let setter = ident(f.strVal & '=')
+    quote do:
+      var t = default(`o`)
+      compiles(`setter`(t, default(`v`)))
+  quote do: inner `fieldIdent`, `objType`, `valueType` 
+  #macro inner(f, o, v): untyped =
+    #expectKind o, nnkSym
+    #expectKind v, nnkSym
+  #  quote do: hasSetterImpl(`f`, `o`, `v`)
+  #let ident = fieldIdent.repr
+  #inner(ident, objType, valueType)
+  #quote do: hasSetterImpl(`ident`, T, V)
 
-  let info = getFieldInfo(A, b)
-  echo info.T.typeof
-  assert info.exported == true
+func insideDefiningModule*[T](): bool =
+  discard
+
 
 when isMainModule and defined test:
   import std/unittest
   import typetraits
-  #import fusion/astdsl
 
   suite "override object fields from tuple of matching fields":
 
     setup:
+      type B = object
       type A = object
         a, c: int
         b*: int
+        d: B
+      func `d=`(self: var A; value: B) {.used.} = discard
+      func `d=`(self: var A; value: char) {.used.} = discard
+
+    test "detect when an object property has a setter":
+      doAssert hasSetter(A, B, d)
+      check hasSetter(A, char, d)
+      check not hasSetter(A, int, d)
 
     test "a":
       doAssert getFieldInfo(A, a).T is int
