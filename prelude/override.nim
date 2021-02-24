@@ -104,6 +104,54 @@ macro hasSetter*[T: object; V](
 func insideDefiningModule*[T](): bool =
   discard
 
+macro init[T: object](t: typedesc[T], initializer): untyped =
+  ## Initialize an object with a custom initializer AST.
+  ## DESIGN
+  ##   - The initializer is a tuple with named fields.
+  ##   - Sorts field assignments by those that can be set in an object constructor
+  ##     versus those that need to use an assignment operator.
+  ##   - compose this AST for type T:
+  ##     WITH
+  ##       type T = object
+  ##         private: int
+  ##         public*: int
+  ##       func private*(self: T): int = self.private
+  ##       func `private=`*(self: var T, value: int) = self.private = value
+  ##     GIVEN
+  ##       let t = init[T]((public: 2, private: 1))
+  ##     EXPECT
+  ##       let t = (proc: T =
+  ##         result = T(public: 2)
+  ##         `private=`(result, 1)
+  ##       )()
+  let initIdent = ident("init" & $t)
+  result = quote do:
+    func `initIdent`: `t` {.inline.} = discard
+  echo result.repr
+  #result = nnkObjConstr.newTree(T)
+  #var sample = default T
+  #var o = newLit sample
+#[   for k, v in sample.fieldPairs:
+    if k == "exitCode":
+      when compiles(sample.exitCode = v):
+        dbg "y"
+      else: dbg "n" ]#
+      #dbg k & " == " & $v.typeof
+#[   macro inner(x: untyped): untyped =
+    result = quote do:
+      dbg sample.`x`.typeof
+    dbg x.kind
+    dbg result.repr
+  proc print(x: NimNode) {.compileTime.} =
+    inner x ]#
+  #initializer.matchAst:
+  #of nnkNilLit: return
+  #of `i` @ nnkPar:
+  #  for kv in i:
+  #    let doAssign = hasSetter(kv[0])
+      #inner kv[0]
+  #    result.add nnkExprColonExpr.newTree(kv[0], kv[1])
+
 
 when isMainModule and defined test:
   import std/unittest
@@ -112,13 +160,20 @@ when isMainModule and defined test:
   suite "override object fields from tuple of matching fields":
 
     setup:
-      type B = object
+      type B = distinct char
       type A = object
         a, c: int
         b*: int
         d: B
-      func `d=`(self: var A; value: B) {.used.} = discard
-      func `d=`(self: var A; value: char) {.used.} = discard
+      func a(self: A): int = self.a
+      func `a=`(self: var A; value: int) = self.a = value
+      func `d=`(self: var A; value: B) {.used.} = self.d = value
+      func `d=`(self: var A; value: char) {.used.} = self.d = B(value)
+
+    test "init fom tuple":
+      let a = init(A, (a: 1, b: 3))
+      check a.a == 1 # calls `a(A): int`
+      check a.b == 3
 
     test "detect when an object property has a setter":
       doAssert hasSetter(A, B, d)
