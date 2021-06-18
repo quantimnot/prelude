@@ -12,8 +12,8 @@ export zero_functional, safeoptions, iface
 
 # First Party
 import pkg/[error, debug, log]
-import ./alias, ./override
-export alias, error, debug, log, override
+import ./alias, ./init
+export alias, error, debug, log, init
 
 #when compileOption("rangechecks"):
 #when compileOption("rangechecks"): 
