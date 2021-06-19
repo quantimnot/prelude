@@ -1,6 +1,6 @@
 # StdLib
-import std/[macros]
-export macros
+import std/[macros, macrocache]
+export macros, macrocache
 
 # Fusion
 import fusion/[astdsl]

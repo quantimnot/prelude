@@ -84,7 +84,6 @@ macro hasSetter*[T: object; V](
     result = quote("@") do:
       var t = default(@o)
       compiles(`@setter`(t, default(@v)))
-    echo repr result
   quote do: inner `fieldIdent`, `objType`, `valueType`
 
 func insideDefiningModule*[T](): bool =
@@ -114,11 +113,8 @@ func getNimNodeType(v: NimNode): NimNode {.compiletime} =
   of nnkCall:
     # TODO: check if ident is object
     alias ident, v[0]
-    # debugecho ident.getImpl.repr
-    # debugecho v.getType.repr
     return macros.getType(nil)
   else:
-    debugEcho type(v)
     doAssert false, "unhandled nimnode type: " & v.lispRepr
 
 macro initFromTuple*[T: object](self: typedesc[T], initializer): untyped =
@@ -188,7 +184,7 @@ macro initFromTuple*[T: object](self: typedesc[T], initializer): untyped =
                   ident"add"
                 command:
                   ident"ident"
-                  newLit("A")
+                  newLit self.strVal
               varSection:
                 identDefs:
                   ident"t"
