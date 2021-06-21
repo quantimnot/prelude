@@ -1,5 +1,7 @@
 # Intended to be included rather than imported.
-import pkg/prelude/[alias, lib]
+{.experimental: "dynamicBindSym".}
+import "."/[alias, lib]
+export lib.macros
 
 func getFieldInfoNodes*[T: object](self: typedesc[T]; fieldIdent: string): (NimNode, NimNode) {.compileTime.} =
   for field in getTypeImpl(self)[2]:

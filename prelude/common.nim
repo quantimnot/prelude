@@ -12,7 +12,7 @@ export zero_functional, safeoptions, iface
 
 # First Party
 import pkg/[error, debug, log]
-import ./alias, ./init
+import "."/alias, "."/init
 export alias, error, debug, log, init
 
 #when compileOption("rangechecks"):
