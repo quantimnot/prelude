@@ -1,5 +1,7 @@
+## Declares common set operations.
+
 import std/intsets
-import "."/set_to_array
+import "."/set_ctor_to_array_ctor
 
 
 proc `<`*[T](x: set[T], y: IntSet): bool =
@@ -23,7 +25,7 @@ proc `<=`*[T](x: set[T], y: IntSet): bool =
 when isMainModule:
   import std/unittest
   test "init intset":
-    var a = setToArray({0, 1..5}).toIntSet
+    var a = setCtorToArrayCtor({0, 1..5}).toIntSet
     check {0..5} <= a
     check not ({0..4} < a)
     check 0 in a

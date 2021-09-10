@@ -1,6 +1,6 @@
-version       = "0.0.0"
+version       = "0.0.1"
 author        = "key:aasdfasdf"
-description   = "Import that imports commonly imported imports. :)"
+description   = ""
 license       = "MIT"
 
 # First Party

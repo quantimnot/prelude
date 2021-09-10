@@ -15,37 +15,7 @@
 ## * 
 ##
 
-import system/platforms
-
-type Backend {.pure.} = enum
-  c, cpp, objc, js, other
-
-template backend: Backend =
-  when defined c: c
-  elif defined cpp: cpp
-  elif defined objc: objc
-  elif defined js: js
-  else: Backend.other
-
-type Compiler {.pure.} = enum
-  gcc, clang, msvc, nodejs, other
-
-template compiler: Compiler =
-  when defined gcc: gcc
-  elif defined clang: clang
-  elif defined msvc: msvc
-  elif defined nodejs: nodejs
-  else: Compiler.other
-
-type AppKind {.pure.} = enum
-  console, gui, lib, staticlib, other
-
-template appKind: AppKind =
-  when defined console: console
-  elif defined gui: gui
-  elif defined lib: lib
-  elif defined staticlib: staticlib
-  else: AppKind.other
+import "."/compiler_config_utils
 
 when backend() in {c, cpp, objc}:
   # https://security.stackexchange.com/questions/24444/what-is-the-most-hardened-set-of-options-for-gcc-compiling-c-c

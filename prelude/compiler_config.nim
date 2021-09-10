@@ -5,9 +5,18 @@ when defined nimscript:
   hint "Processing", off
   hint "GlobalVar", on
   hint "Performance", on
-  switch("verbosity", "0")
-  switch("styleCheck", "off")
-  switch("excessiveStackTrace", "off")
+  switch "verbosity", "0"
+  switch "styleCheck", "off"
+  switch "excessiveStackTrace", "off"
+
+  # these are recommendations by @araq as of 9/7/21 (https://forum.nim-lang.org/t/8404#54227):
+  switch "experimental", "strictEffects"
+  switch "experimental", "unicodeOperators"
+  switch "experimental", "overloadableEnums"
+  switch "define", "nimPreviewDotLikeOps"
+  switch "define", "nimPreviewFloatRoundtrip"
+  switch "define", "nimStrictDelete"
+  switch "gc", "orc"
 
   task build_debug, "Build debug target for the default backend":
     switch "undef", "release"

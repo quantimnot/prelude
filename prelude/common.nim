@@ -1,6 +1,7 @@
 # StdLib
-import std/[sugar, with, os, strutils, times, parseutils, hashes, tables, sets, sequtils, setutils, packedsets]
-export sugar, with, os, strutils, times, parseutils, hashes, tables, sets, sequtils, setutils, packedsets
+import std/[sugar, with, os, strutils, times, parseutils, hashes, tables, sets, setutils, packedsets]
+from std/sequtils import delete
+export sugar, with, os, strutils, times, parseutils, hashes, tables, sets, sequtils.delete, setutils, packedsets
 
 # Fusion
 import fusion/[matching]
