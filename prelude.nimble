@@ -1,13 +1,13 @@
-version       = "0.0.1"
-author        = "key:aasdfasdf"
-description   = ""
+version       = "0.1.0"
+author        = "quantimnot"
+description   = "my common nim imports"
 license       = "MIT"
 
 # First Party
 requires "error"
 requires "debug"
 #requires "log"
-requires "sanitize"
+requires "redact"
 
 # Third Party
 requires "https://github.com/yglukhov/iface.git"
