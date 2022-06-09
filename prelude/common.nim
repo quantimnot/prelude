@@ -8,13 +8,24 @@ import fusion/[matching]
 export matching
 
 # Third Party
-import pkg/[zero_functional, safeoptions, iface]
-export zero_functional, safeoptions, iface
+import pkg/[zero_functional, safeoptions, iface, print]
+export zero_functional, safeoptions, iface, print
 
 # First Party
-import pkg/[error, debug, log]
+import pkg/[error, debug, log, test]
 import "."/alias, "."/init
-export alias, error, debug, log, init
+export alias, error, debug, log, init, test
 
 #when compileOption("rangechecks"):
-#when compileOption("rangechecks"): 
+#when compileOption("rangechecks"):
+
+template preconditions*(body): untyped =
+  when not defined danger:
+    body
+
+template postconditions*(body): untyped =
+  when not defined danger:
+    body
+
+type
+  Path* = string ## File path

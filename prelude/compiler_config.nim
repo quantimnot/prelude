@@ -2,21 +2,25 @@
 # https://nim-lang.github.io/Nim/nimscript.html
 
 when defined nimscript:
-  hint "Processing", off
+  hint "Processing", on
   hint "GlobalVar", on
   hint "Performance", on
   switch "verbosity", "0"
   switch "styleCheck", "off"
-  switch "excessiveStackTrace", "off"
 
   # these are recommendations by @araq as of 9/7/21 (https://forum.nim-lang.org/t/8404#54227):
-  switch "experimental", "strictEffects"
-  switch "experimental", "unicodeOperators"
-  switch "experimental", "overloadableEnums"
+  when (NimMajor, NimMinor, NimPatch) >= (1, 6, 0):
+    switch "define", "nimPreviewFloatRoundtrip"
+    # switch "experimental", "strictEffects"
+    # switch "experimental", "unicodeOperators"
+    # switch "experimental", "overloadableEnums"
+    switch "experimental", "caseStmtMacros"
+    switch "mm", "orc"
+  else:
+    switch "gc", "orc"
   switch "define", "nimPreviewDotLikeOps"
   switch "define", "nimPreviewFloatRoundtrip"
   switch "define", "nimStrictDelete"
-  switch "gc", "orc"
 
   task build_debug, "Build debug target for the default backend":
     switch "undef", "release"
@@ -91,6 +95,7 @@ when defined release:
   {.define: runtime_checks.}
   when defined nimscript:
     switch "opt", "speed"
+    switch "excessiveStackTrace", "off"
 else:
   {.hint: "DEBUG MODE".}
   {.define: debug.}
@@ -98,6 +103,8 @@ else:
   {.define: runtime_checks.}
   when defined nimscript:
     switch "debugger", "native"
+    --debuginfo
+    --lineDir:on
 
 when defined runtime_checks:
   when defined nimscript:
@@ -111,6 +118,7 @@ elif defined danger:
   when defined nimscript:
     switch "checks", "off"
     switch "assertions", "off"
+    switch "excessiveStackTrace", "off"
 else:
   when defined hardened:
     import prelude/hardened
