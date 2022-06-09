@@ -2,7 +2,8 @@
 # https://nim-lang.github.io/Nim/nimscript.html
 
 when defined nimscript:
-  hint "Processing", on
+  hint "Conf", off
+  hint "Processing", off
   hint "GlobalVar", on
   hint "Performance", on
   switch "verbosity", "0"
@@ -21,6 +22,30 @@ when defined nimscript:
   switch "define", "nimPreviewDotLikeOps"
   switch "define", "nimPreviewFloatRoundtrip"
   switch "define", "nimStrictDelete"
+
+  import std/os
+
+  task test, "Run tests":
+    --hints:off
+    const testrunner = "tests" / "runtests"
+    const testsFailed = "test run failed"
+    const opts = "--skipParentCfg "
+    template runTests(args) =
+      try:
+        selfExec args
+      except:
+        quit "test run failed", 1
+
+    when fileExists(testrunner & ".nim"):
+      runTests "r " & opts & testrunner
+    elif fileExists(testrunner & ".nims"):
+      runTests opts & testrunner & ".nims"
+    else:
+      const msg = """
+
+        Missing the test runner.
+        Create a Nim/NimScript program at: """ & testrunner
+      {.error: msg.}
 
   task build_debug, "Build debug target for the default backend":
     switch "undef", "release"
