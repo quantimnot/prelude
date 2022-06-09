@@ -27,7 +27,8 @@ when defined nimscript:
 
   task test, "Run tests":
     --hints:off
-    const testrunner = "tests" / "runtests"
+    const testDir = "tests"
+    const testRunner = "runtests"
     const testsFailed = "test run failed"
     const opts = "--skipParentCfg "
     template runTests(args) =
@@ -35,17 +36,17 @@ when defined nimscript:
         selfExec args
       except:
         quit "test run failed", 1
+    withDir testDir:
+      if fileExists(testRunner & ".nim"):
+        runTests "r " & opts & testRunner
+      elif fileExists(testRunner & ".nims"):
+        runTests opts & testRunner & ".nims"
+      else:
+        const msg = """
 
-    when fileExists(testrunner & ".nim"):
-      runTests "r " & opts & testrunner
-    elif fileExists(testrunner & ".nims"):
-      runTests opts & testrunner & ".nims"
-    else:
-      const msg = """
-
-        Missing the test runner.
-        Create a Nim/NimScript program at: """ & testrunner
-      {.error: msg.}
+          Missing the test runner.
+          Create a Nim/NimScript program at: """ & testDir / testRunner
+        quit msg, 1
 
   task build_debug, "Build debug target for the default backend":
     switch "undef", "release"
