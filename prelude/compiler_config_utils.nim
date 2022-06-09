@@ -1,15 +1,15 @@
-from system/platforms import targetOS
-export platforms.targetOS
+import system/platforms
+export platforms
+import std/compilesettings
 
 type Backend* {.pure.} = enum
-  c, cpp, objc, js, other
+  c, cpp, objc, js
 
 template backend*: untyped =
-  when defined c: c
-  elif defined cpp: cpp
-  elif defined objc: objc
-  elif defined js: js
-  else: Backend.other
+  when querySetting(SingleValueSetting.backend) == "c": c
+  elif querySetting(SingleValueSetting.backend) == "cpp": cpp
+  elif querySetting(SingleValueSetting.backend) == "objc": objc
+  elif querySetting(SingleValueSetting.backend) == "js": js
 
 type Compiler* {.pure.} = enum
   gcc, clang, msvc, nodejs, other

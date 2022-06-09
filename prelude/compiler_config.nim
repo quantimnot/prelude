@@ -93,6 +93,7 @@ when defined release:
   {.hint: "RELEASE MODE".}
   {.define: sanitize.}
   {.define: runtime_checks.}
+  {.define: optimized.}
   when defined nimscript:
     switch "opt", "speed"
     switch "excessiveStackTrace", "off"
@@ -112,6 +113,7 @@ when defined runtime_checks:
     switch "assertions", "on"
 elif defined danger:
   {.warning: "DANGER MODE".}
+  {.define: optimized.}
   {.undef: hardened.}
   {.undef: sanitize.}
   {.undef: runtime_checks.}
@@ -119,6 +121,9 @@ elif defined danger:
     switch "checks", "off"
     switch "assertions", "off"
     switch "excessiveStackTrace", "off"
-else:
-  when defined hardened:
-    import prelude/hardened
+
+when defined optimized:
+  import prelude/optimized
+
+when defined hardened:
+  import prelude/hardened

@@ -20,7 +20,7 @@ import "."/compiler_config_utils
 when backend() in {c, cpp, objc}:
   # https://security.stackexchange.com/questions/24444/what-is-the-most-hardened-set-of-options-for-gcc-compiling-c-c
 
-  when compiler() in {gcc, clang}:
+  template gccAndClang =
     {.passC: "-Wall -Wextra".}
     # Turn on all warnings to help ensure the underlying code is correct.
     {.passC: "-Wconversion -Wsign-conversion".}
@@ -34,7 +34,8 @@ when backend() in {c, cpp, objc}:
     else: {.passC: "-pie -fPIE".}
     # > Required to obtain the full security benefits of ASLR.
 
-  elif compiler() in {gcc}:
+  when compiler() in {gcc}:
+    gccAndClang
     {.passC: "-mmitigate-rop".}
     # > Attempt to compile code without unintended return addresses, making ROP just a little harder.
     {.passC: "-mindirect-branch=thunk -mfunction-return=thunk".}
@@ -60,7 +61,7 @@ when backend() in {c, cpp, objc}:
 
   elif compiler() in {clang}:
     # https://llvm.org/docs/SpeculativeLoadHardening.html
-    discard
+    gccAndClang
 
   elif compiler() in {msvc}:
     # https://docs.microsoft.com/en-us/cpp/c-runtime-library/security-features-in-the-crt
@@ -108,7 +109,7 @@ when backend() in {c, cpp, objc}:
     {.passL: "/NXCOMPAT".}
     # https://docs.microsoft.com/en-us/cpp/build/reference/nxcompat-compatible-with-data-execution-prevention
 
-  when targetOS in {windows}:
+  when targetOS == windows:
 
     when compiler() in {gcc, clang}:
       {.passL: "-Wl,dynamicbase".}
@@ -116,7 +117,7 @@ when backend() in {c, cpp, objc}:
       {.passL: "-Wl,nxcompat".}
       # > Tell linker to use DEP protection.
 
-  elif targetOS in {macosx}:
+  elif targetOS == macosx:
     {.passL: "-Wl,-sectcreate,__RESTRICT,__restrict,/dev/null".}
     # Prevent symbol interposition. https://stackoverflow.com/a/29667177
     #
